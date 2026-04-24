@@ -1,0 +1,28 @@
+{
+  "tag": "token_kmedoids_1",
+  "exp_dir": "/data3/yuzhuoyi/AD/DiffusionPlanner/nuplan-devkit/nuplan/dataset/exp/exp/simulation/closed_loop_nonreactive_agents/diffusion_planner/val14/diffusion_planner_release/training_v2_2026-04-14-00_35_09_2026-04-14-17-39-50",
+  "timestamp": "2026-04-14-17-48-13",
+  "run": {
+    "total": 12,
+    "succeeded": 12
+  },
+  "metrics": {
+    "corners_in_drivable_area": NaN,
+    "drivable_area_compliance": 83.33,
+    "driving_direction_compliance": 100.0,
+    "ego_is_comfortable": 66.67,
+    "ego_is_making_progress": 100.0,
+    "ego_jerk": NaN,
+    "ego_lane_change": NaN,
+    "ego_lat_acceleration": NaN,
+    "ego_lon_acceleration": NaN,
+    "ego_lon_jerk": NaN,
+    "ego_progress_along_expert_route": 63.59,
+    "ego_yaw_acceleration": NaN,
+    "ego_yaw_rate": NaN,
+    "no_ego_at_fault_collisions": 41.67,
+    "speed_limit_compliance": 100.0,
+    "time_to_collision_within_bound": 41.67
+  },
+  "aggregator_final": {}
+}

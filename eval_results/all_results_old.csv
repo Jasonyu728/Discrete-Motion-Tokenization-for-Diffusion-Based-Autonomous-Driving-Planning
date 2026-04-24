@@ -1,0 +1,12 @@
+tag,timestamp,metric_corners_in_drivable_area,metric_drivable_area_compliance,metric_driving_direction_compliance,metric_ego_is_comfortable,metric_ego_is_making_progress,metric_ego_jerk,metric_ego_lane_change,metric_ego_lat_acceleration,metric_ego_lon_acceleration,metric_ego_lon_jerk,metric_ego_progress_along_expert_route,metric_ego_yaw_acceleration,metric_ego_yaw_rate,metric_no_ego_at_fault_collisions,metric_speed_limit_compliance,metric_time_to_collision_within_bound,Collisions,TTC,Drivable,Comfort,Progress,corners_in_drivable_area,driving_direction_compliance,ego_is_making_progress,ego_jerk,ego_lane_change,ego_lat_acceleration,ego_lon_acceleration,ego_lon_jerk,ego_yaw_acceleration,ego_yaw_rate,speed_limit_compliance
+token_emb_training_3,2026-04-02-05-30-15,,0.6667,0.8333,0.1667,0.4167,,,,,,0.4092,,,0.5833,1.0,0.5,,,,,,,,,,,,,,,,
+token_emb_training_3,2026-04-02-06-07-25,,0.6667,0.8333,0.1667,0.4167,,,,,,0.4092,,,0.5833,1.0,0.5,,,,,,,,,,,,,,,,
+token_emb_training_3_2026-03-31-09_19_24_2026-04-02-03-30-24,2026-04-02-06-09-16,,66.67,83.33,16.67,41.67,,,,,,40.92,,,58.33,100.0,50.0,,,,,,,,,,,,,,,,
+token_emb_training_large,2026-04-08-02-20-04,,100.0,87.5,66.67,8.33,,,,,,6.63,,,83.33,100.0,83.33,,,,,,,,,,,,,,,,
+token_emb_training_balanced,2026-04-10-01-59-01,,0.0,70.83,25.0,58.33,,,,,,41.54,,,16.67,100.0,16.67,,,,,,,,,,,,,,,,
+token_emb_training_2d,2026-04-10-19-40-51,,25.0,0.0,0.0,0.0,,,,,,0.24,,,41.67,60.16,16.67,,,,,,,,,,,,,,,,
+token_emb_training_2d,2026-04-11-09-47-03,,66.67,0.0,0.0,0.0,,,,,,0.24,,,66.67,50.62,50.0,,,,,,,,,,,,,,,,
+token_emb_training_v4,2026-04-12-12-54-13,,41.67,12.5,0.0,8.33,,,,,,2.54,,,58.33,100.0,58.33,,,,,,,,,,,,,,,,
+token_emb_training_v2,2026-04-13-14-48-30,,0.0,45.83,16.67,83.33,,,,,,62.14,,,8.33,99.86,8.33,,,,,,,,,,,,,,,,
+token_kmedoids_1,2026-04-14-17-48-13,,83.33,100.0,66.67,100.0,,,,,,63.59,,,41.67,100.0,41.67,,,,,,,,,,,,,,,,
+token_kmedoids_1_test,2026-04-14-18-31-05,,,,,,,,,,,,,,,,,41.67,41.67,83.33,66.67,63.59,,100.0,100.0,,,,,,,,100.0

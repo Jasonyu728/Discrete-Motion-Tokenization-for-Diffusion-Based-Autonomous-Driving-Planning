@@ -1,12 +1,18 @@
-logs/*
-*/.vscode/*
-*/.git/*
-exp/*
-.vscode
+# 数据和模型文件（太大，不上传）
+*.npz
+*.pth
+*.ckpt
+nuplan_diffusionplanner_large/
+yzy_output/
+vocab/
+
+# Python 缓存
 __pycache__/
+*.pyc
+*.pyo
+.eggs/
 *.egg-info/
-ckpt/
-image*
-exp/
-cache/
-checkpoints/
+
+# 环境
+.env
+*.log

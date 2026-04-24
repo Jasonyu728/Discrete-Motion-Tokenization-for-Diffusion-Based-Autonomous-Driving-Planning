@@ -1,0 +1,28 @@
+{
+  "tag": "token_emb_training_2d",
+  "exp_dir": "/data3/yuzhuoyi/AD/DiffusionPlanner/nuplan-devkit/nuplan/dataset/exp/exp/simulation/closed_loop_nonreactive_agents/diffusion_planner/val14/diffusion_planner_release/token_emb_training_2d_2026-04-10-11_22_13_2026-04-10-19-37-25",
+  "timestamp": "2026-04-10-19-40-51",
+  "run": {
+    "total": 12,
+    "succeeded": 12
+  },
+  "metrics": {
+    "corners_in_drivable_area": NaN,
+    "drivable_area_compliance": 25.0,
+    "driving_direction_compliance": 0.0,
+    "ego_is_comfortable": 0.0,
+    "ego_is_making_progress": 0.0,
+    "ego_jerk": NaN,
+    "ego_lane_change": NaN,
+    "ego_lat_acceleration": NaN,
+    "ego_lon_acceleration": NaN,
+    "ego_lon_jerk": NaN,
+    "ego_progress_along_expert_route": 0.24,
+    "ego_yaw_acceleration": NaN,
+    "ego_yaw_rate": NaN,
+    "no_ego_at_fault_collisions": 41.67,
+    "speed_limit_compliance": 60.16,
+    "time_to_collision_within_bound": 16.67
+  },
+  "aggregator_final": {}
+}

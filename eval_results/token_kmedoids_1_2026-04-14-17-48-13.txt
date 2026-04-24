@@ -1,0 +1,40 @@
+
+============================================================
+  基本信息
+============================================================
+  实验标签:  token_kmedoids_1
+  结果目录:  /data3/yuzhuoyi/AD/DiffusionPlanner/nuplan-devkit/nuplan/dataset/exp/exp/simulation/closed_loop_nonreactive_agents/diffusion_planner/val14/diffusion_planner_release/training_v2_2026-04-14-00_35_09_2026-04-14-17-39-50
+  读取时间:  2026-04-14-17-48-13
+
+============================================================
+  仿真运行状态
+============================================================
+  总场景数:   12
+  成功场景数: 12
+
+============================================================
+  各子指标均值（单位：%，0~100）
+============================================================
+                         metric  mean_score
+   driving_direction_compliance      100.00
+         ego_is_making_progress      100.00
+         speed_limit_compliance      100.00
+       drivable_area_compliance       83.33
+             ego_is_comfortable       66.67
+ego_progress_along_expert_route       63.59
+     no_ego_at_fault_collisions       41.67
+ time_to_collision_within_bound       41.67
+       corners_in_drivable_area         NaN
+                       ego_jerk         NaN
+                ego_lane_change         NaN
+           ego_lat_acceleration         NaN
+           ego_lon_acceleration         NaN
+                   ego_lon_jerk         NaN
+           ego_yaw_acceleration         NaN
+                   ego_yaw_rate         NaN
+
+============================================================
+  aggregator 汇总
+============================================================
+
+完成。

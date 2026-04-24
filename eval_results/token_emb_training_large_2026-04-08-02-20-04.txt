@@ -1,0 +1,40 @@
+
+============================================================
+  基本信息
+============================================================
+  实验标签:  token_emb_training_large
+  结果目录:  /data3/yuzhuoyi/AD/DiffusionPlanner/nuplan-devkit/nuplan/dataset/exp/exp/simulation/closed_loop_nonreactive_agents/diffusion_planner/val14/diffusion_planner_release/token_emb_training_large_2026-04-06-08_53_05_2026-04-08-10-00-12
+  读取时间:  2026-04-08-02-20-04
+
+============================================================
+  仿真运行状态
+============================================================
+  总场景数:   12
+  成功场景数: 12
+
+============================================================
+  各子指标均值（单位：%，0~100）
+============================================================
+                         metric  mean_score
+       drivable_area_compliance      100.00
+         speed_limit_compliance      100.00
+   driving_direction_compliance       87.50
+     no_ego_at_fault_collisions       83.33
+ time_to_collision_within_bound       83.33
+             ego_is_comfortable       66.67
+         ego_is_making_progress        8.33
+ego_progress_along_expert_route        6.63
+       corners_in_drivable_area         NaN
+                       ego_jerk         NaN
+                ego_lane_change         NaN
+           ego_lat_acceleration         NaN
+           ego_lon_acceleration         NaN
+                   ego_lon_jerk         NaN
+           ego_yaw_acceleration         NaN
+                   ego_yaw_rate         NaN
+
+============================================================
+  aggregator 汇总
+============================================================
+
+完成。

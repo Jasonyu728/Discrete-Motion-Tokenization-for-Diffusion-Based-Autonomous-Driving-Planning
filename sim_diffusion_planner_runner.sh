@@ -1,33 +1,48 @@
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export CUDA_VISIBLE_DEVICES=0,1,2
 export HYDRA_FULL_ERROR=1
+
+# Add PyTorch bundled CUDA libs to LD_LIBRARY_PATH (fixes missing libnvrtc.so)
+_torch_lib=$(python -c "import torch, os; print(os.path.join(os.path.dirname(torch.__file__), 'lib'))" 2>/dev/null)
+if [ -n "$_torch_lib" ]; then
+    export LD_LIBRARY_PATH="$_torch_lib:${LD_LIBRARY_PATH}"
+fi
 
 ###################################
 # User Configuration Section
 ###################################
 # Set environment variables
-export NUPLAN_DEVKIT_ROOT="REPLACE_WITH_NUPLAN_DEVIKIT_DIR"  # nuplan-devkit absolute path (e.g., "/home/user/nuplan-devkit")
-export NUPLAN_DATA_ROOT="REPLACE_WITH_DATA_DIR"  # nuplan dataset absolute path (e.g. "/data")
-export NUPLAN_MAPS_ROOT="REPLACE_WITH_MAPS_DIR" # nuplan maps absolute path (e.g. "/data/nuplan-v1.1/maps")
-export NUPLAN_EXP_ROOT="REPLACE_WITH_EXP_DIR" # nuplan experiment absolute path (e.g. "/data/nuplan-v1.1/exp")
+export NUPLAN_DEVKIT_ROOT="/data3/yuzhuoyi/AD/DiffusionPlanner/nuplan-devkit"   # e.g. "/data3/yuzhuoyi/nuplan-devkit"
+export NUPLAN_DATA_ROOT="/data3/yuzhuoyi/AD/DiffusionPlanner/nuplan-devkit/nuplan/dataset"               # e.g. "/data3/yuzhuoyi/nuplan/dataset"
+export NUPLAN_MAPS_ROOT="/data3/yuzhuoyi/AD/DiffusionPlanner/nuplan-devkit/nuplan/dataset/maps"               # e.g. "/data3/yuzhuoyi/nuplan/dataset/maps"
+export NUPLAN_EXP_ROOT="/data3/yuzhuoyi/AD/DiffusionPlanner/nuplan-devkit/nuplan/dataset/exp"                 # e.g. "/data3/yuzhuoyi/nuplan/exp"
 
 # Dataset split to use
-# Options: 
+# Options:
 #   - "test14-random"
 #   - "test14-hard"
 #   - "val14"
-SPLIT="REPLACE_WITH_SPLIT"  # e.g., "val14"
+SPLIT="val14"
 
 # Challenge type
-# Options: 
-#   - "closed_loop_nonreactive_agents"
-#   - "closed_loop_reactive_agents"
-CHALLENGE="REPLACE_WITH_CHALLENGE"  # e.g., "closed_loop_nonreactive_agents"
+# Options:
+#   - "closed_loop_nonreactive_agents"   (NR: 周围车辆不对 ego 做出反应)
+#   - "closed_loop_reactive_agents"      (R:  周围车辆会对 ego 做出反应)
+CHALLENGE="closed_loop_nonreactive_agents"
 ###################################
 
 
 BRANCH_NAME=diffusion_planner_release
-ARGS_FILE=./checkpoints/args.json
-CKPT_FILE=./checkpoints/model.pth
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+
+###################################
+# Checkpoint Configuration
+# 每次评估前修改 CKPT_DIR 指向对应的训练结果目录
+CKPT_NAME="training_divide_v3_128D/2026-04-22-18:13:32"
+CKPT_DIR="$SCRIPT_DIR/yzy_output/training_log/$CKPT_NAME"
+###################################
+
+ARGS_FILE=$CKPT_DIR/args.json
+CKPT_FILE=$CKPT_DIR/latest.pth
 
 if [ "$SPLIT" == "val14" ]; then
     SCENARIO_BUILDER="nuplan"
@@ -47,10 +62,10 @@ python $NUPLAN_DEVKIT_ROOT/nuplan/planning/script/run_simulation.py \
     planner.diffusion_planner.ckpt_path=$CKPT_FILE \
     scenario_builder=$SCENARIO_BUILDER \
     scenario_filter=$SPLIT \
-    experiment_uid=$PLANNER/$SPLIT/$BRANCH_NAME/${FILENAME_WITHOUT_EXTENSION}_$(date "+%Y-%m-%d-%H-%M-%S") \
+    experiment_uid=$PLANNER/$SPLIT/$BRANCH_NAME/$(echo $CKPT_NAME | tr '/: ' '___')_$(TZ='Asia/Shanghai' date "+%Y-%m-%d-%H-%M-%S") \
     verbose=true \
     worker=ray_distributed \
-    worker.threads_per_node=128 \
+    worker.threads_per_node=48 \
     distributed_mode='SINGLE_NODE' \
     number_of_gpus_allocated_per_simulation=0.15 \
     enable_simulation_progress_bar=true \

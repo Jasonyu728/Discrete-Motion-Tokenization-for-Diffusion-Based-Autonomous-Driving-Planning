@@ -76,7 +76,8 @@ class Diffusion_Planner_Decoder(nn.Module):
             elif isinstance(m, nn.LayerNorm):
                 nn.init.constant_(m.bias, 0)
                 nn.init.constant_(m.weight, 1.0)
-            elif isinstance(m, nn.Embedding):
+            elif isinstance(m, nn.Embedding) and m.weight.requires_grad:
+                # Skip frozen embeddings (e.g. token_emb initialized from VQ centroids)
                 nn.init.normal_(m.weight, mean=0.0, std=0.02)
         self.apply(_basic_init)
 

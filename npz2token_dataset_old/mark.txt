@@ -1,0 +1,7 @@
+vocab_512：最基础的1000个场景时的vocab
+vocab_512_large：最基础的50000个场景时的vocab
+vocab_512_filter：50000：过滤速度
+vocab_512_balanced：50000：各速度段均匀分布
+vocab_512_2d：50000：速度与转弯结合
+vocab_512_2d_weighted（还没尝试效果）：50000：在速度与转弯结合的基础上，按照场景的常见情况进行过滤
+v4: KMedoids
