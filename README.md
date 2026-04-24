@@ -1,178 +1,69 @@
-<div align="center">
-<img src="./assets/img/diffusion_planner.png" width=100% style="vertical-align: bottom;">
-<h3>Diffusion-Based Planning for Autonomous Driving with Flexible Guidance</h3>
+一、任务背景
+这个项目的目标是自动驾驶运动规划：给定当前车辆周围的环境信息（其他车辆、车道线、路线），让模型预测自车（ego）未来 8 秒的行驶轨迹。
+评估平台是 nuPlan，它会在仿真环境中让模型实际开车，然后打分。核心指标包括：
+● Score：综合分（目标接近100）
+● Collisions：不碰撞
+● Drivable：不开出可行驶区域
+● Comfort：加速度/加加速度不超标
+● Progress：沿预定路线前进的比例
+● Making：是否在推进目标（乘数，影响最大）
+Score 公式：Score = Collisions × Drivable × Direction × Making × 加权均值(TTC, Comfort, Progress, SpeedLimit)，任何乘数项为 0 则 Score=0。
 
-[Yinan Zheng](https://github.com/ZhengYinan-AIR)\*, [Ruiming Liang](https://github.com/LRMbbj)\*, Kexin Zheng\*, [Jinliang Zheng](https://github.com/2toinf), Liyuan Mao, [Jianxiong Li](https://facebear-ljx.github.io/), Weihao Gu, Rui Ai, [Shengbo Eben Li](https://scholar.google.com/citations?user=Dxiw1K8AAAAJ&hl=zh-CN), [Xianyuan Zhan](https://zhanzxy5.github.io/zhanxianyuan/), [Jingjing Liu](https://air.tsinghua.edu.cn/en/info/1046/1194.htm)
+二、原始模型：DiffusionPlanner
+基础模型是 DiffusionPlanner（已有开源工作）。核心思路：
+环境上下文（车道/车辆/路线）
+        ↓  Encoder（Transformer）
+        上下文特征
+        ↓  DiT（扩散模型）
+        从噪声逐步去噪，预测未来轨迹
+        ↓
+  连续轨迹 (B, 80帧, 4维) [x, y, cos_h, sin_h]
+原版用连续轨迹坐标作为扩散目标，直接在 (x, y, heading) 空间加噪/去噪。
 
+三、我们的核心改动：Token 化轨迹表示
+原版的问题：连续轨迹空间很高维、不紧凑，扩散模型难以学到有意义的运动模式。
+我们的做法：借鉴语言模型的思路，把连续轨迹离散化成 token 序列。
+3.1 构建运动词表（Vocabulary）
+把所有训练场景的轨迹切成每 0.5s 一段（5帧），收集海量"运动片段"，用 MiniBatchKMeans 聚类，把相似的运动模式归为一类，每类的中心叫做一个 token（运动原语）。
+● Ego 词表：512 或 1024 个 token（现在在探索 1024）
+● Neighbor 词表：1024 个 token
+● 每个 token 是一个 15 维向量（5帧 × 3维：dx, dy, dh）
+● 静止率控制：过滤掉过多的"不动"token，初始 15%，后来改成 5%
+3.2 Tokenize 训练数据
+用词表把每条训练轨迹编码成 16 个 token ID 的序列（16 × 0.5s = 8s），格式：[BOS, t1, t2, ..., t16, EOS]
+3.3 构建 Token Embedding 表
+每个 token ID 对应一个 D 维 embedding 向量（目前 D=64，探索 D=128）：
+centroid (15维) × 随机投影矩阵 (15×D) → embedding (D维)
+Embedding 表固定不训练，作为"运动含义的坐标系"。
+3.4 训练：MSE Loss in Embedding Space
+GT token IDs → 查 embedding 表 → x0 (B, P, 16×D)
+                                       ↓ VPSDE 加噪
+                                      xt
+                                       ↓ DiT 去噪
+                                  pred (B, P, 16×D)
 
-[**[Arxiv]**](https://arxiv.org/pdf/2501.15564) [**[Project Page]**](https://zhengyinan-air.github.io/Diffusion-Planner/)
+Loss = α × MSE(pred_ego, x0_ego) + MSE(pred_nbr, x0_nbr)
+α（alpha_planning_loss）控制 ego 和 neighbor 的损失权重比，通常设为 3.0 或 5.0。
+3.5 推理：Embedding → Token → 轨迹
+DiT 输出 pred (B, P, 16×D)
+    ↓  最近邻查找（cdist）
+Token IDs (B, 16)
+    ↓  TokenTrajectoryDecoder
+连续轨迹 (B, 80帧, 4维)
+TokenTrajectoryDecoder 把 token ID 对应的 centroid（15维运动片段）逐帧展开，拼成完整轨迹，最后加一步高斯平滑消除 token 边界的速度跳变。
 
-International Conference on Learning Representation (ICLR), 2025
+四、完整数据流
+nuPlan 原始数据
+    ↓ data_process.py
+.npz 格式（每个场景一个文件，含车辆状态、车道、路线、未来轨迹）
+    ↓ vocab_divide_token.py（k-means 聚类）
+ego_vocab_1024.npz + nbr_vocab_1024.npz
+    ↓ tokenize_npz.py
+每个 .npz 新增 ego_token_ids / neighbor_token_ids 字段
+    ↓ torch_run.sh → train_predictor.py → train_epoch.py
+训练好的模型 checkpoint（latest.pth + args.json）
+    ↓ sim_diffusion_planner_runner.sh → nuPlan 仿真
+评估结果（parquet 文件）
+    ↓ read_eval_results.py
+all_results.csv（Score, Collisions, TTC, Drivable, Comfort, Progress...）
 
-🌟 **Oral Presentation (Notable-top-2%)**
-</div>
-
-The official implementation of **Diffusion Planner**, which **represents a pioneering effort in fully harnessing the power of diffusion models for high-performance motion planning, without overly relying on refinement**. Checkout our latest work [**Flow Planner (NeurIPS 2025)**](https://github.com/DiffusionAD/Flow-Planner), a learning-based framework with advanced interactive behavior modeling.
-
-<div style="display: flex; justify-content: center; align-items: center; gap: 2%;">
-
-  <img src="./assets/gif/near_ped.gif" width="32%" alt="Video 1">
-
-  <img src="./assets/gif/unprotect_turn.gif" width="32%" alt="Video 2">
-
-  <img src="./assets/gif/multiple_vehicle.gif" width="32%" alt="Video 3">
-
-</div>
-
-## Table of Contents
-
-- [Methods](#methods)
-- [Closed-loop Performance on nuPlan](#closed-loop-performance-on-nuplan)
-   - [Learning-based Methods](#learning-based-methods)
-   - [Rule-based / Hybrid Methods](#rule-based-hybrid-methods)
-   - [Qualitative Results](#qualitative-results)
-- [Getting Started](#getting-started)
-  - [Closed-loop Evaluation](#closed-loop-evaluation)
-  - [Training](#training)
-
-
-## Methods
-
-**Diffusion Planner** leverages the expressive and flexible diffusion model to enhance autonomous planning:
-* DiT-based architecture focusing on the fusion of noised future vehicle trajectories and conditional information
-* Joint modeling of key participants' statuses, unifying motion prediction and closed-loop planning as future trajectory generation
-* Fast inference during diffusion sampling, achieving around 20Hz for real-time performance
-
-<image src="assets/img/architecture.png" width=100%>
-
-## Closed-loop Performance on nuPlan
-### Learning-based Methods
-
-
-| Methods                            | Val14 (NR) | Val14 \(R\) | Test14-hard (NR) | Test14-hard \(R\) | Test14 (NR) | Test14 \(R\) |
-| ---------------------------------- | ---------- | ----------- | ---------------- | ----------------- | ----------- | ------------ |
-| PDM-Open*                          | 53.53      | 54.24       | 33.51            | 35.83             | 52.81       | 57.23        |
-| UrbanDriver                        | 68.57      | 64.11       | 50.40            | 49.95             | 51.83       | 67.15        |
-| GameFormer w/o refine.             | 13.32      | 8.69        | 7.08             | 6.69              | 11.36       | 9.31         |
-| PlanTF                             | 84.72      | 76.95       | 69.70            | 61.61             | 85.62       | 79.58        |
-| PLUTO w/o refine.*                 | 88.89      | 78.11       | 70.03            | 59.74             | **89.90**   | 78.62        |
-| Diffusion-es w/o LLM               | 50.00      | -           | -                | -                 | -           | -            |
-| STR2-CPKS-800M w/o refine.*        | 65.16      | -           | 52.57            | -                 | 68.74       | -            |
-| Diffusion Planner (ours)           | **89.87**  | **82.80**   | **75.99**        | **69.22**         | **89.19**   | **82.93**    |
-
-*: Using pre-searched reference lines or additional proposals as model inputs provides prior knowledge.
-
----
-
-### Rule-based / Hybrid Methods
-
-| Methods                              | Val14 (NR) | Val14 \(R\) | Test14-hard (NR) | Test14-hard \(R\) | Test14 (NR) | Test14 \(R\) |
-| ------------------------------------ | ---------- | ----------- | ---------------- | ----------------- | ----------- | ------------ |
-| **Expert (Log-replay)**              | 93.53      | 80.32       | **85.96**        | 68.80             | 94.03       | 75.86        |
-| IDM                                  | 75.60      | 77.33       | 56.15            | 62.26             | 70.39       | 74.42        |
-| PDM-Closed                           | 92.84      | 92.12       | 65.08            | 75.19             | 90.05       | 91.63        |
-| PDM-Hybrid                           | 92.77      | 92.11       | 65.99            | 76.07             | 90.10       | 91.28        |
-| GameFormer                           | 79.94      | 79.78       | 68.70            | 67.05             | 83.88       | 82.05        |
-| PLUTO                                | 92.88      | 76.88       | 80.08            | 76.88             | 92.23       | 90.29        |
-| Diffusion-es                         | 92.00      | -           | -                | -                 | -           | -            |
-| STR2-CPKS-800M                       | 93.91      | 92.51       | 77.54            | **82.02**         | -           | -            |
-| Diffusion Planner w/ refine (ours)   | **94.26**  | **92.90**   | 78.87            | **82.00**         | **94.80**   | **91.75**    |
-
----
-
-###  Qualitative Results
-
-<image src="assets/img/quality.png" width=100%>
-
-**Future trajectory generation visualization**. A frame from a challenging narrow road turning scenario in the closed-loop test, including the **future planning** of the ego vehicle (*PlanTF* and *PLUTO w/o refine.* showing multiple **candidate trajectories**), **predictions** for neighboring vehicles, and the **ground truth** ego trajectory.
-
-
-## Getting Started
-
-- Setup the nuPlan dataset following the [offiical-doc](https://nuplan-devkit.readthedocs.io/en/latest/dataset_setup.html)
-- Setup conda environment
-```
-conda create -n diffusion_planner python=3.9
-conda activate diffusion_planner
-
-# install nuplan-devkit
-git clone https://github.com/motional/nuplan-devkit.git && cd nuplan-devkit
-pip install -e .
-pip install -r requirements.txt
-
-# setup diffusion_planner
-cd ..
-git clone https://github.com/ZhengYinan-AIR/Diffusion-Planner.git && cd Diffusion-Planner
-pip install -e .
-pip install -r requirements_torch.txt
-```
-
-### Closed-loop Evaluation
-- Download the model checkpoint from [Huggingface](https://huggingface.co/ZhengYinan2001/Diffusion-Planner) repository. Download, two files under `checkpoints` directory. 
-```bash
-mkdir -p checkpoints
-wget -P ./checkpoints https://huggingface.co/ZhengYinan2001/Diffusion-Planner/resolve/main/args.json
-wget -P ./checkpoints https://huggingface.co/ZhengYinan2001/Diffusion-Planner/resolve/main/model.pth
-```
-- Run the simulation
-1. Set up configuration in sim_diffusion_planner_runner.sh.
-2. Run
-```bash 
-bash sim_diffusion_planner_runner.sh
-```
-- Visualize the results
-1. Set up configuration in run_nuboard.ipynb.
-2. Launch Jupyter Notebook or JupyterLab to execute run_nuboard.ipynb.
-
-### Classifer Guidance Demo
-
-1. Set up configuration in sim_diffusion_planner_runner.sh.
-2. Run
-
-```bash
-bash sim_guidance_demo.sh
-```
-
-Further detail see [Classifier Guidance Doc](diffusion_planner/model/guidance/documentation_guidance.md)
-
-### Training
-- Preprocess the training data
-```bash
-chmod +x data_process.sh
-./data_process.sh
-```
-- Run the training code
-```bash
-chmod +x torch_run.sh
-./torch_run.sh
-```
-
-## To Do List
-
-The code is under cleaning and will be released gradually.
-
-- [ ] e2e & real world vehicle
-- [ ] delivery vehicle dataset (government approval in progress)
-- [x] guidance tutorial
-- [x] data preprocess
-- [x] training code
-- [x] diffusion planner & checkpoint
-- [x] initial repo & paper
-
-
-## Bibtex
-
-If you find our code and paper can help, please cite our paper as:
-```
-@inproceedings{
-zheng2025diffusionbased,
-title={Diffusion-Based Planning for Autonomous Driving with Flexible Guidance},
-author={Yinan Zheng and Ruiming Liang and Kexin ZHENG and Jinliang Zheng and Liyuan Mao and Jianxiong Li and Weihao Gu and Rui Ai and Shengbo Eben Li and Xianyuan Zhan and Jingjing Liu},
-booktitle={The Thirteenth International Conference on Learning Representations},
-year={2025},
-url={https://openreview.net/forum?id=wM2sfVgMDH}
-}
-```
-
-## Acknowledgement
-Diffusion Planner is greatly inspired by the following outstanding contributions to the open-source community: [nuplan-devkit](https://github.com/motional/nuplan-devkit), [GameFormer-Planner](https://github.com/MCZhi/GameFormer-Planner), [tuplan_garage](https://github.com/autonomousvision/tuplan_garage), [planTF](https://github.com/jchengai/planTF), [pluto](https://github.com/jchengai/pluto), [StateTransformer](https://github.com/Tsinghua-MARS-Lab/StateTransformer), [DiT](https://github.com/facebookresearch/DiT), [dpm-solver](https://github.com/LuChengTHU/dpm-solver)
