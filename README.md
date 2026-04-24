@@ -60,8 +60,10 @@
 3. ⬇️ 经过 **DiT** 去噪
 4. ⬇️ 输出预测值 **pred** `(B, P, 16×D)`
 
+   
 **损失函数：**
-$$Loss = \alpha \times MSE(pred\_ego, x_0\_ego) + MSE(pred\_nbr, x_0\_nbr)$$
+$$Loss = \alpha \times MSE(pred_{ego}, x_{0\_ego}) + MSE(pred_{nbr}, x_{0\_nbr})$$
+
 *(注：$\alpha$ 即 `alpha_planning_loss`，用于控制 ego 和 neighbor 的损失权重比，通常设为 3.0 或 5.0)*
 
 ### 3.5 推理：Embedding → Token → 轨迹
