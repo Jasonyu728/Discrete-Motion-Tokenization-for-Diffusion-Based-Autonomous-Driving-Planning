@@ -1,4 +1,37 @@
-
+```
+.
+├── diffusion_planner/          # 原版 DiffusionPlanner（保留，仅改了其中2个文件）
+│   ├── model/
+│   │   ├── diffusion_planner.py      # 主模型：持有 Encoder + DiT + Decoder
+│   │   ├── module/
+│   │   │   ├── encoder.py            # Transformer Encoder（上下文编码）
+│   │   │   ├── decoder.py            # 连续轨迹 Decoder（原版；推理时用）
+│   │   │   └── dit.py                # DiT 去噪网络
+│   ├── training/
+│   │   ├── dataset.py                # ★ 已改：加载 token 字段并构建 embedding GT
+│   │   └── train_epoch.py            # ★ 已改：loss 在 embedding 空间计算
+│   └── ...
+│
+├── vocabulary_v1.py            # MotionVocabulary 类（3维 token，encode/decode API）
+├── vocabulary_v2.py            # MotionVocabulary 类（15维 token，v5 词表）
+├── vocab_divide_token.py       # 词表构建脚本（MiniBatchKMeans + 静止 token 过滤）
+├── tokenize_npz.py             # 离线 tokenization（Rolling Matching，写回 .npz）
+│
+├── vocab/                      # 已生成的词表文件
+│   ├── ego_vocab_1024.npz
+│   └── nbr_vocab_1024.npz
+│
+├── make_vocab_py_old/          # 词表构建的早期版本（保留供对比）
+├── npz2token_dataset_old/      # 早期 tokenization 脚本（保留供对比）
+│
+├── train_predictor.py          # 训练入口（解析 Hydra config，启动 Lightning）
+├── torch_run.sh                # torchrun 启动脚本（单机多卡 / 单卡）
+├── data_process.py             # nuPlan → .npz 格式转换（原版）
+├── sim_diffusion_planner_runner.sh  # nuPlan 仿真评估脚本
+├── read_eval_results.py        # 解析评估 .parquet，输出 all_results.csv
+├── eval_results/               # 存放历次评估结果
+└── normalization.json          # 坐标归一化参数
+```
 
 ## 一、任务背景
 
