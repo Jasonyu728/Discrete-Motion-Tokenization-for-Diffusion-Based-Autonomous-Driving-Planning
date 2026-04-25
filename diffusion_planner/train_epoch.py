@@ -193,23 +193,29 @@ def train_epoch(train_loader, model, optimizer, args, model_ema=None, aug=None):
         _, decoder_outputs = model(inputs)
         pred = decoder_outputs['score'].reshape(B, P, -1)              # (B, P, 16*D)
 
-        # ── 7. MSE Loss（ego 按 token 位移加权，鼓励前进行为）────────────────
+        # ── 7. MSE Loss ─────────────────────────────────────────────────────
         with torch.no_grad():
-            ego_c   = raw_model.decoder.decoder.ego_traj_decoder.centroids  # (V, 15)
-            raw_ids = (ego_motion_ids - 3).clamp(0, ego_c.shape[0] - 1)    # (B, 16)
-            tok_c   = ego_c[raw_ids]                                         # (B, 16, 15)
-            # 最后一个子帧在 token 局部坐标系下的位置 = 该 token 的净位移
-            dx_last  = tok_c[:, :, 12]                                       # (B, 16)
+            ego_c    = raw_model.decoder.decoder.ego_traj_decoder.centroids  # (V, 15)
+            raw_ids  = (ego_motion_ids - 3).clamp(0, ego_c.shape[0] - 1)    # (B, 16)
+            tok_c    = ego_c[raw_ids]                                         # (B, 16, 15)
+            dx_last  = tok_c[:, :, 12]                                        # (B, 16)
             dy_last  = tok_c[:, :, 13]
-            tok_dist = (dx_last ** 2 + dy_last ** 2).sqrt()                 # (B, 16)
-            # weight: 静止 token→1.0，快速 token→最大 3.0
-            w = (1.0 + tok_dist / tok_dist.mean().clamp(min=1e-6)).clamp(max=3.0)
+            tok_dist = (dx_last ** 2 + dy_last ** 2).sqrt()                  # (B, 16)
+
+            # 场景级权重：整条轨迹平均位移，快速场景整体提权（上限 2.0）
+            traj_dist = tok_dist.mean(dim=1)                                  # (B,)
+            scene_w = (1.0 + traj_dist / traj_dist.mean().clamp(min=1e-6)).clamp(max=2.0)  # (B,)
+
+            # 时序权重：前 4 个 token（前 2s）额外 ×2，促进 Making 的最低启动条件
+            time_w = torch.ones(16, device=args.device)
+            time_w[:4] = 2.0                                                  # (16,)
 
         D_emb    = ego_token_emb.embedding_dim
         pred_ego = pred[:, 0].reshape(B, 16, D_emb)    # (B, 16, D)
         x0_ego   = x0[:, 0].reshape(B, 16, D_emb)      # (B, 16, D)
-        loss_ego = (w * ((pred_ego - x0_ego) ** 2).mean(-1)).mean()
-        loss_nbr = torch.mean((pred[:, 1:] - x0[:, 1:]) ** 2)
+        token_mse = ((pred_ego - x0_ego) ** 2).mean(-1)                      # (B, 16)
+        loss_ego  = (scene_w.unsqueeze(1) * time_w.unsqueeze(0) * token_mse).mean()
+        loss_nbr  = torch.mean((pred[:, 1:] - x0[:, 1:]) ** 2)
 
         loss = args.alpha_planning_loss * loss_ego + loss_nbr
 
