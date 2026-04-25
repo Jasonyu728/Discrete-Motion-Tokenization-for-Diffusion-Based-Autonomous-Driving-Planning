@@ -58,6 +58,7 @@ class Decoder(nn.Module):
         self._observation_normalizer: ObservationNormalizer = config.observation_normalizer
 
         self._guidance_fn = config.guidance_fn
+        self._guidance_scale = 2.0
 
     @staticmethod
     def _build_token_emb(vocab_path: str, token_emb_dim: int, seed: int = 42):
@@ -182,7 +183,7 @@ class Decoder(nn.Module):
                                 "observation_normalizer": self._observation_normalizer,
                                 "state_normalizer": self._state_normalizer
                             },
-                            "guidance_scale": 0.5,
+                            "guidance_scale": self._guidance_scale,
                             "guidance_type": "classifier" if self._guidance_fn is not None else "uncond"
                         },
                 )
