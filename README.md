@@ -15,6 +15,7 @@
 ├── vocabulary_v1.py            # MotionVocabulary 类（3维 token，encode/decode API）
 ├── vocabulary_v2.py            # MotionVocabulary 类（15维 token，v5 词表）
 ├── vocab_divide_token.py       # 词表构建脚本（MiniBatchKMeans + 静止 token 过滤）
+├── vocab_divide_token_v1.py    # 优化了token的构建方法
 ├── tokenize_npz.py             # 离线 tokenization（Rolling Matching，写回 .npz）
 │
 ├── vocab/                      # 已生成的词表文件
